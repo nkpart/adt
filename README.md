@@ -8,7 +8,7 @@ Usage
 
     gem install adt
 
-Now:
+ADT provides a DSL for specifying the cases in an algebraic data type.
 
     require 'adt'
     class ValidatedValue
@@ -20,7 +20,14 @@ Now:
       end
     end
 
-Later...
+What you now have:
+
+* Constructors for each of the cases: Type.<case>(arg)
+* A `fold` method, for matching on all the cases.
+* A good #== and #inspect implementation
+* #<case>? and #when_<case>(handle_case_proc, default_proc) for dealing with a single case
+
+Examples:
 
     # Create values
     mine = ValidatedValue.ok(5)
