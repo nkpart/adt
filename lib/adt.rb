@@ -19,39 +19,34 @@ module ADT
   # 
   # This will provde 2 core pieces of functionality.
   # 
-  #   1. Constructors, as class methods, named the same as the case, and expecting
-  #      parameters as per the symbol arguments provided in the `cases` block.
-  #   
-  #        @failure = Validation.failure(["error1"], 5)
-  #        @success = Validation.success([1,2])
-  #
-  #   2. #fold. This method takes a proc for every case. If the case has parameters, those
-  #      will be passed to the proc. The proc matching the particular value of the case will
-  #      be called. Using this method, every instance method for the ADT can be defined.
-  #        
-  #        @failure.fold(
-  #          proc { |values| "We are a success! #{values} "},
-  #          proc { |errors, position| "Failed :(, at position #{position}" }
-  #        )
-  #
-  #      It can also be passed a hash of procs, keyed by case name:
-  #
-  #        @failure.fold(
-  #          :success => proc { |values| values },
-  #          :failures => proc { |errors, position| [] }
-  #       )
+  # 1. Constructors, as class methods, named the same as the case, and expecting
+  #    parameters as per the symbol arguments provided in the `cases` block.
+  #      @failure = Validation.failure(["error1"], 5)
+  #      @success = Validation.success([1,2])
+  # 2. #fold. This method takes a proc for every case. If the case has parameters, those
+  #    will be passed to the proc. The proc matching the particular value of the case will
+  #    be called. Using this method, every instance method for the ADT can be defined.
+  #      @failure.fold(
+  #        proc { |values| "We are a success! #{values} "},
+  #        proc { |errors, position| "Failed :(, at position #{position}" }
+  #      )
+  #    It can also be passed a hash of procs, keyed by case name:
+  #      @failure.fold(
+  #        :success => proc { |values| values },
+  #        :failures => proc { |errors, position| [] }
+  #      )
   #
   # In addition, a number of helper methods are defined:
   #
-  #   * Standard object methods: #==, #inspect
-  #   * Case checking predicates:
+  # * Standard object methods: #==, #inspect
+  # * Case checking predicates:
   #       some_validation.success?
   #       some_validation.failure?
-  #   * Functions for handling specific cases:
+  # * Functions for handling specific cases:
   #       some_validation.when_success(proc { |values| values }, proc { [] })
   #
-  # @param [Proc] A block which defines the constructors. This will be evaluated using
-  # #instance_eval to record the cases.
+  # @param [Proc] &definitions block which defines the constructors. This will be evaluated using
+  #               #instance_eval to record the cases.
   #
   def cases(&definitions)
     dsl = CaseRecorder.new
