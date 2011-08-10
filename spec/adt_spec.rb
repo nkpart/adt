@@ -1,22 +1,12 @@
 require 'adt'
 
 module Samples
-
   class Maybe
     extend ADT
 
     cases do
       just(:value)
       nothing
-    end
-  end
-
-  class Either
-    extend ADT
-
-    cases do
-      left(:value)
-      right(:value)
     end
   end
 
