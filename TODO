@@ -1,0 +1,5 @@
+
+Fix up the doc formatting in ADT#cases
+Fix the link to ADT#cases in Kernel#ADT
+Hide the CaseRecorder class from Yard
+
