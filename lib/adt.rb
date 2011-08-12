@@ -68,6 +68,7 @@ module ADT
     cases = dsl._church_cases
     num_cases = dsl._church_cases.length
     case_names = dsl._church_cases.map { |x| x[0] }
+    is_enumeration = dsl._church_cases.all?{ |(_, args)| args.count == 0 }
 
     # creates procs with a certain arg count. body should use #{prefix}N to access arguments. The result should be
     # eval'ed at the call site
@@ -110,10 +111,18 @@ module ADT
       end
     end
 
-    if dsl._church_cases.all?{ |(_, args)| args.count == 0 }
+    # Indexing is 1-based
+    define_method(:case_index) do fold((1..case_names.length).to_a.map { |i| proc { i } }) end
+
+    # Enumerations are defined as classes with cases that don't take arguments. A number of useful
+    # functions can be defined for these.
+    if is_enumeration 
       singleton_class.send(:define_method, :all_cases) do
         @all_cases ||= case_names.map { |x| send(x) }
       end
+
+      define_method(:to_i) { case_index }
+      singleton_class.send(:define_method, :from_i) do |idx| send(case_names[idx - 1]) end
     end
 
     # The usual object helpers
@@ -135,6 +144,18 @@ module ADT
           eval(proc_create[args.count, "s", "other.when_#{cn}(#{inner_check}, proc { false })"])
         })
       end
+    end
+
+    define_method(:to_a) do 
+      fold(*cases.map { |(cn, args)|
+        eval(proc_create[args.count, "a", "[" + (1..args.count).to_a.map { |idx| "a#{idx}" }.join(',') + "]"])
+      })
+    end
+
+    # Comparisons are done by index, then by the values within the case (if any) via #to_a
+    define_method(:<=>) do |other|
+      comp = case_index <=> other.case_index
+      comp == 0 ?  to_a <=> other.to_a : comp
     end
 
     # Case specific methods

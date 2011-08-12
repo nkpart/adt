@@ -66,15 +66,37 @@ describe ADT do
     LolStatus.srs.lol_status(proc { true }, proc { false }).should == true
   end
 
-  it "creates an all cases accessor if the type is an enumeration" do
-    LolStatus.all_cases.should == [LolStatus.srs, LolStatus.active]
-  end
-
-  it "no all cases if not an enumeration" do
-    Maybe.respond_to?(:all_cases).should be_false
-  end
-
   it "does not overlap constructors" do
     Maybe.respond_to?(:srs).should be_false
+  end
+
+  describe "enumerations" do
+    it "creates an all cases accessor if the type is an enumeration" do
+      LolStatus.all_cases.should == [LolStatus.srs, LolStatus.active]
+    end
+
+    it "no all cases if not an enumeration" do
+      Maybe.respond_to?(:all_cases).should be_false
+    end
+
+
+    it "has to_i/from_i, which are 1-based" do
+      LolStatus.all_cases.each_with_index { |cse, idx|
+        cse.to_i.should == (idx + 1)
+        LolStatus.from_i(idx + 1).should == cse
+      }
+    end
+  end
+
+  it "to_a" do
+    Maybe.just(5).to_a.should == [5]
+    Maybe.nothing.to_a.should == []
+  end
+
+  it "<=>" do
+    (Maybe.just(5) <=> Maybe.just(10)).should == -1
+    (Maybe.just(5) <=> Maybe.just(2)).should == 1
+    (Maybe.just(5) <=> Maybe.nothing).should == -1
+    (Maybe.nothing <=> Maybe.just(1)).should == 1
   end
 end
