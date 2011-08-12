@@ -61,6 +61,7 @@ module ADT
   #               #instance_eval to record the cases.
   #
   def cases(&definitions)
+    singleton_class = class <<self; self; end
     dsl = CaseRecorder.new
     dsl.__instance_eval(&definitions)
 
@@ -98,14 +99,20 @@ module ADT
     dsl._church_cases.each_with_index do |(name, case_args), index|
       constructor = proc { |*args| self.new(&eval(proc_create[num_cases, "a", "a#{index+1}.call(*args)"])) }
       if case_args.size > 0 then
-        self.class.send(:define_method, name, &constructor)
+        singleton_class.send(:define_method, name, &constructor)
       else
         # Cache the constructed value if it is unary
-        self.class.send(:define_method, name) do
+        singleton_class.send(:define_method, name) do
           instance_variable_get("@#{name}") || begin
             instance_variable_set("@#{name}", constructor.call)
           end
         end
+      end
+    end
+
+    if dsl._church_cases.all?{ |(_, args)| args.count == 0 }
+      singleton_class.send(:define_method, :all_cases) do
+        @all_cases ||= case_names.map { |x| send(x) }
       end
     end
 

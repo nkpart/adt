@@ -65,4 +65,16 @@ describe ADT do
   it "aliases fold to type" do
     LolStatus.srs.lol_status(proc { true }, proc { false }).should == true
   end
+
+  it "creates an all cases accessor if the type is an enumeration" do
+    LolStatus.all_cases.should == [LolStatus.srs, LolStatus.active]
+  end
+
+  it "no all cases if not an enumeration" do
+    Maybe.respond_to?(:all_cases).should be_false
+  end
+
+  it "does not overlap constructors" do
+    Maybe.respond_to?(:srs).should be_false
+  end
 end

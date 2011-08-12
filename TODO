@@ -1,6 +1,5 @@
 Ord
 Enum 
-Tom wants a way to get all the cases for an ADT, if they don't take parameters
 Print case details in the inspection of the type. ie. Maybe = ADT do...end; Maybe.inspect ~ "Maybe: just/nothing"
 doco - Fix the link to ADT#cases in Kernel#ADT
 doco - Hide the CaseRecorder class from Yard
