@@ -14,6 +14,11 @@ module Samples
     main
     snack(:size)
   end
+
+  class LolStatus 
+    extend ADT
+    cases do srs; active; end
+  end
 end
 
 describe ADT do
@@ -51,5 +56,13 @@ describe ADT do
 
   it "alternative decl" do
     Meal.snack(5).snack?.should == true
+  end
+
+  it "uses constant values for unary constructors" do
+    Maybe.nothing.object_id.should == Maybe.nothing.object_id
+  end
+
+  it "aliases fold to type" do
+    LolStatus.srs.lol_status(proc { true }, proc { false }).should == true
   end
 end

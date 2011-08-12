@@ -1,5 +1,17 @@
 require 'adt/case_recorder'
 
+module StringHelp
+  def self.underscore(camel_cased_word)
+    word = camel_cased_word.to_s.dup
+    word.gsub!(/::/, '/')
+    word.gsub!(/([A-Z]+)([A-Z][a-z])/,'\1_\2')
+    word.gsub!(/([a-z\d])([A-Z])/,'\1_\2')
+    word.tr!("-", "_")
+    word.downcase!
+    word
+  end
+end
+
 module ADT
   module_function
 
@@ -56,8 +68,8 @@ module ADT
     num_cases = dsl._church_cases.length
     case_names = dsl._church_cases.map { |x| x[0] }
 
-    # creates procs with a certain arg count. body should use aN to access arguments. The result should be
-    # evalled at the call site
+    # creates procs with a certain arg count. body should use #{prefix}N to access arguments. The result should be
+    # eval'ed at the call site
     proc_create = proc { |argc, prefix, body|
       args = argc > 0 ? "|#{(1..argc).to_a.map { |a| "#{prefix}#{a}" }.join(',')}|" : ""
       "proc { #{args} #{body} }" 
@@ -77,11 +89,23 @@ module ADT
       end
     end
 
+    # If we're inside a named class, then set up an alias to fold
+    if name
+      define_method(StringHelp.underscore(name.split('::').last)) do |*args| fold(*args) end
+    end
+
     # The Constructors
     dsl._church_cases.each_with_index do |(name, case_args), index|
-      self.class.send(:define_method, name) do |*args|
-        the_proc = eval(proc_create[num_cases, "a", "a#{index+1}.call(*args)"])
-        self.new(&the_proc)
+      constructor = proc { |*args| self.new(&eval(proc_create[num_cases, "a", "a#{index+1}.call(*args)"])) }
+      if case_args.size > 0 then
+        self.class.send(:define_method, name, &constructor)
+      else
+        # Cache the constructed value if it is unary
+        self.class.send(:define_method, name) do
+          instance_variable_get("@#{name}") || begin
+            instance_variable_set("@#{name}", constructor.call)
+          end
+        end
       end
     end
 
