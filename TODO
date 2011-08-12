@@ -1,6 +1,12 @@
 Ord
-Enum 
+
+enumerations
+  - #to_i ::from_i
+
 Print case details in the inspection of the type. ie. Maybe = ADT do...end; Maybe.inspect ~ "Maybe: just/nothing"
+
+drop the kernel method? 
+
 doco - Fix the link to ADT#cases in Kernel#ADT
 doco - Hide the CaseRecorder class from Yard
 doco - fold alias
