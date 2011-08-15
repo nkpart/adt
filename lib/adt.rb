@@ -124,9 +124,9 @@ module ADT
 
     # Case info methods
     # Indexing is 1-based
-    define_method(:case_index) do fold((1..case_names.length).to_a.map { |i| proc { i } }) end
-    define_method(:case_name) do fold(case_names.map { |i| proc { i.to_s } }) end
-    define_method(:case_arity) do fold(dsl._church_cases.map { |(_, args)| proc { args.count } }) end
+    define_method(:case_index) do fold(*(1..case_names.length).to_a.map { |i| proc { i } }) end
+    define_method(:case_name) do fold(*case_names.map { |i| proc { i.to_s } }) end
+    define_method(:case_arity) do fold(*dsl._church_cases.map { |(_, args)| proc { args.count } }) end
 
     # Enumerations are defined as classes with cases that don't take arguments. A number of useful
     # functions can be defined for these.
