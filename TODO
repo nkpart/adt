@@ -8,3 +8,4 @@ doco - fold alias
 doco - #all_values
 doco - caching of enumerations
 doco - <=>, to_a
+doco - case_name/case_index/case_arity

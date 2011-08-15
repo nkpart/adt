@@ -99,4 +99,17 @@ describe ADT do
     (Maybe.just(5) <=> Maybe.nothing).should == -1
     (Maybe.nothing <=> Maybe.just(1)).should == 1
   end
+
+  describe "Case info methods" do
+    it "#case_name" do
+      Maybe.just(5).case_name.should == "just"
+    end
+    it "#case_index" do
+      Maybe.just(5).case_index.should == 1
+    end
+    it "#case_arity" do
+      Maybe.just(5).case_arity.should == 1
+      Maybe.nothing.case_arity.should == 0
+    end
+  end
 end
