@@ -131,8 +131,8 @@ module ADT
     # Enumerations are defined as classes with cases that don't take arguments. A number of useful
     # functions can be defined for these.
     if is_enumeration 
-      singleton_class.send(:define_method, :all_cases) do
-        @all_cases ||= case_names.map { |x| send(x) }
+      singleton_class.send(:define_method, :all_values) do
+        @all_values ||= case_names.map { |x| send(x) }
       end
 
       define_method(:to_i) { case_index }

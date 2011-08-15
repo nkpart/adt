@@ -1,31 +1,29 @@
 require 'adt'
 
-module Samples
-  class Maybe
-    extend ADT
+class Maybe
+  extend ADT
 
-    cases do
-      nothing
-      just(:value)
-    end
-  end
-
-  class Meal
-    extend ADT
-    cases do
-      snack(:size)
-      main
-    end
-  end
-
-  class LolStatus 
-    extend ADT
-    cases do srs; active; end
+  cases do
+    nothing
+    just(:value)
   end
 end
 
+class Meal
+  extend ADT
+  cases do
+    snack(:size)
+    main
+  end
+end
+
+class LolStatus 
+  extend ADT
+  cases do srs; active; end
+end
+
 describe ADT do
-  include Samples
+
   it "#fold" do
     Maybe.just(5).fold(proc { 3 }, proc { |x| x + 1 }).should == 6
     Maybe.nothing.fold(proc { 3 }, proc { |x| x + 1 }).should == 3
@@ -53,8 +51,8 @@ describe ADT do
   end
 
   it "#inspect" do
-    Maybe.just(5).inspect.should == "#<Samples::Maybe just value:5>"
-    Maybe.nothing.inspect.should == "#<Samples::Maybe nothing>"
+    Maybe.just(5).inspect.should == "#<Maybe just value:5>"
+    Maybe.nothing.inspect.should == "#<Maybe nothing>"
   end
 
   it "alternative decl" do
@@ -75,16 +73,16 @@ describe ADT do
 
   describe "enumerations" do
     it "creates an all cases accessor if the type is an enumeration" do
-      LolStatus.all_cases.should == [LolStatus.srs, LolStatus.active]
+      LolStatus.all_values.should == [LolStatus.srs, LolStatus.active]
     end
 
     it "no all cases if not an enumeration" do
-      Maybe.respond_to?(:all_cases).should be_false
+      Maybe.respond_to?(:all_values).should be_false
     end
 
 
     it "has to_i/from_i, which are 1-based" do
-      LolStatus.all_cases.each_with_index { |cse, idx|
+      LolStatus.all_values.each_with_index { |cse, idx|
         cse.to_i.should == (idx + 1)
         LolStatus.from_i(idx + 1).should == cse
       }
