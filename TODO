@@ -1,11 +1,6 @@
 Print case details in the inspection of the type. ie. Maybe = ADT do...end; Maybe.inspect ~ "Maybe: just/nothing"
 
-drop the kernel method? 
+include Comparable
 
-doco - Fix the link to ADT#cases in Kernel#ADT
 doco - Hide the CaseRecorder class from Yard
-doco - fold alias
-doco - #all_values
-doco - caching of enumerations
-doco - <=>, to_a
-doco - case_name/case_index/case_arity
+doco - Fix the link to ADT#cases in Kernel#ADT

@@ -5,14 +5,17 @@ module Samples
     extend ADT
 
     cases do
-      just(:value)
       nothing
+      just(:value)
     end
   end
 
-  Meal = ADT do
-    main
-    snack(:size)
+  class Meal
+    extend ADT
+    cases do
+      snack(:size)
+      main
+    end
   end
 
   class LolStatus 
@@ -24,8 +27,8 @@ end
 describe ADT do
   include Samples
   it "#fold" do
-    Maybe.just(5).fold(proc { |x| x + 1 }, proc { 3 }).should == 6
-    Maybe.nothing.fold(proc { |x| x + 1 }, proc { 3 }).should == 3
+    Maybe.just(5).fold(proc { 3 }, proc { |x| x + 1 }).should == 6
+    Maybe.nothing.fold(proc { 3 }, proc { |x| x + 1 }).should == 3
   end
 
   it "#==" do
@@ -96,8 +99,13 @@ describe ADT do
   it "<=>" do
     (Maybe.just(5) <=> Maybe.just(10)).should == -1
     (Maybe.just(5) <=> Maybe.just(2)).should == 1
-    (Maybe.just(5) <=> Maybe.nothing).should == -1
-    (Maybe.nothing <=> Maybe.just(1)).should == 1
+    (Maybe.just(5) <=> Maybe.nothing).should == 1
+    (Maybe.nothing <=> Maybe.just(1)).should == -1
+  end
+
+  it "Comparable" do
+    (Maybe.just(5) > Maybe.just(3)).should be_true
+    (Maybe.nothing < Maybe.just(3)).should be_true
   end
 
   describe "Case info methods" do
@@ -105,7 +113,7 @@ describe ADT do
       Maybe.just(5).case_name.should == "just"
     end
     it "#case_index" do
-      Maybe.just(5).case_index.should == 1
+      Maybe.just(5).case_index.should == 2
     end
     it "#case_arity" do
       Maybe.just(5).case_arity.should == 1

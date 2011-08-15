@@ -51,11 +51,24 @@ module ADT
   # In addition, a number of helper methods are defined:
   #
   # * Standard object methods: #==, #inspect
+  # * Conversion to an array of the arguments: #to_a (nullary constructors return empty arrays)
+  # * #<=> and Comparable: cases are compared by index, and then by their parameters as an array
   # * Case checking predicates:
   #       some_validation.success?
   #       some_validation.failure?
   # * Functions for handling specific cases:
   #       some_validation.when_success(proc { |values| values }, proc { [] })
+  # * Case information
+  #       some_validation.case_name # <= "success"
+  #       some_validation.case_index # <= 1 # Indexing is 1-based.
+  #       some_validation.case_arity # <= 1 # Number of arguments required by the case
+  # * #fold is aliased to an underscored name of the type. ie. ValidatedValue gets #validated_value
+  #
+  # If the type is an enumeration (it only has nullary constructors), then a few extra methods are available:
+  # 
+  # * 1-based conversion to and from integers: #to_i, ::from_i
+  # * Accessor for all values: ::all_values
+  #
   #
   # @param [Proc] &definitions block which defines the constructors. This will be evaluated using
   #               #instance_eval to record the cases.
@@ -92,9 +105,7 @@ module ADT
     end
 
     # If we're inside a named class, then set up an alias to fold
-    if name
-      define_method(StringHelp.underscore(name.split('::').last)) do |*args| fold(*args) end
-    end
+    define_method(StringHelp.underscore(name.split('::').last)) do |*args| fold(*args) end
 
     # The Constructors
     dsl._church_cases.each_with_index do |(name, case_args), index|
@@ -155,6 +166,7 @@ module ADT
       comp = case_index <=> other.case_index
       comp == 0 ?  to_a <=> other.to_a : comp
     end
+    include Comparable
 
     # Case specific methods
     # eg.
@@ -180,26 +192,6 @@ module ADT
         })
       end
     end
-  end
-end
-
-module Kernel
-  # Returns a class configured with cases as specified in the block. See `ADT::cases` for details.
-  #
-  #     Maybe = ADT do
-  #       just(:value)
-  #       nothing
-  #     end
-  #
-  #     v = Maybe.just(5)
-  #  
-  def ADT(&blk)
-    c = Class.new
-    c.instance_eval do
-      extend ADT
-      cases(&blk)
-    end
-    c
   end
 end
 
