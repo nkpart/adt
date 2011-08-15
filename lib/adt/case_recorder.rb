@@ -1,4 +1,5 @@
 module ADT
+  # @private
   class CaseRecorder
     alias :__instance_eval :instance_eval
 
@@ -10,6 +11,7 @@ module ADT
       @_church_cases = []
     end
 
+    # Defines a case for an ADT.
     def define_case(sym, *args)
       @_church_cases << [sym, args]
     end
