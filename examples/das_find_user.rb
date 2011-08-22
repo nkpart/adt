@@ -1,8 +1,10 @@
+# In the destroyallsoftware.com screencast 'Extracting from Controller to Model', Gary goes
+# through the motions of extracting a function that can return an object, or raise 2 different
+# exceptions. This is well suited to an ADT.
+
 # BEFORE
 #
 class AccountController
-  
-  # SNIP
   
   def generate_token
     return unless request.post?
