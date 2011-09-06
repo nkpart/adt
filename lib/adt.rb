@@ -220,16 +220,23 @@ module ADT
   # @param [Proc] The definitions of the implementations for each case.
   def operation(sym, &definitions)
     define_method(sym) do |*args|
+      the_instance = self
       dsl = CaseRecorder.new
-      dsl_cls = class <<dsl; self; end
-      # This is hax so that we can 'instance_eval' the definitions block on a recorder,
-      # but in this case the definitions block could have arguments (which are arguments
-      # to the operation)
-      dsl_cls.send(:define_method, :_defs, &definitions)
-      dsl._defs(*args)
+      # The definitions block needs to be executed in the context of the recorder, to
+      # read the impls.
+      dsl.__instance_exec(*args, &definitions)
       # Now we just turn the [(case_name, impl)] structure into an argument for fold and
       # are done. Fold with a hash will check that all keys are defined.
-      fold(dsl._implementations.inject({}) { |memo, (c, impl)| memo[c] = impl; memo })
+      fold(dsl._implementations.inject({}) { |memo, (c, impl)| 
+        # Fucker. if 'impl' is used directly, because of the 'define_method' from earlier,
+        # it is evaluated in the context of the recorder, which is bad. So instead. We
+        # instance_exec it back on the instance.
+        # TODO: use the proc builder like in the `cases` method, which will let us tie 
+        # down the arity
+        some_impl = proc { |*args| the_instance.instance_exec(*args, &impl) }
+        memo[c] = some_impl
+        memo 
+      })
     end
   end
 end

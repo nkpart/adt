@@ -1,4 +1,5 @@
 require 'adt'
+require 'rspec'
 
 class Identity
   extend ADT
@@ -33,4 +34,16 @@ describe "Defining operations on a class" do
     baz.class_eval do operation(:nothing) {} end
     proc { baz.value(5).nothing }.should raise_error
   end
+
+  it "works if you use a helper method" do
+    baz = Identity.dup
+    baz.class_eval do
+      def help; 5; end
+      operation :incr do
+        value { |v| v + help }
+      end
+    end
+    baz.value(5).incr.should == 10
+  end
 end
+

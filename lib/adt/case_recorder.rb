@@ -2,6 +2,7 @@ module ADT
   # @private
   class CaseRecorder
     alias :__instance_eval :instance_eval
+    alias :__instance_exec :instance_exec
     instance_methods.each { |m| undef_method m unless m =~ /(^__|object_id)/ }
 
     def initialize
