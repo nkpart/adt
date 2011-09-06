@@ -200,7 +200,7 @@ module ADT
   # a block argument that represents the implementation of the operation for that case.
   # 
   # eg. To define an operation on a Maybe/Option type which returns the wrapped value, or 
-  #     the supplied argument if it doesn't have anything:
+  # the supplied argument if it doesn't have anything:
   # 
   #     class Maybe
   #       extend ADT
