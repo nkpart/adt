@@ -1,3 +1,8 @@
+0.0.4
+=====
+
+* BUG: Methods defined using the 'operation' DSL could not access other methods in the class.
+
 0.0.3
 =====
 
