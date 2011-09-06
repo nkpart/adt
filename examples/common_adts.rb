@@ -1,3 +1,4 @@
+require 'adt'
 
 class Identity
   extend ADT
