@@ -36,7 +36,7 @@ What you now have:
 * A good #== and #inspect implementation
 * \#_case_? and #when__case_(handle_case_proc, default_proc) for dealing with a single case
 
-Check the [documentation](http://rubydoc.info/gems/adt/0.0.2/ADT:cases) for more information.
+Check the [documentation](http://rubydoc.info/gems/adt/0.0.3/ADT:cases) for more information.
 
 Usage examples
 --------------

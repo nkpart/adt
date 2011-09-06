@@ -1,3 +1,7 @@
+0.0.3
+=====
+
+* Added a DSL for declaring operations.
 
 0.0.2
 =====
