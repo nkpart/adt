@@ -193,5 +193,44 @@ module ADT
       end
     end
   end
+
+  # Defines an operation (method) for an ADT, using a DSL similar to the cases definition.
+  # 
+  # For each case in the adt, the block should call a method of the same name, and pass it
+  # a block argument that represents the implementation of the operation for that case.
+  # 
+  # eg. To define an operation on a Maybe/Option type which returns the wrapped value, or 
+  #     the supplied argument if it doesn't have anything:
+  # 
+  #     class Maybe
+  #       extend ADT
+  #       cases do
+  #         just(:value)
+  #         nothing
+  #       end
+  #
+  #       operation :or_value do |if_nothing|
+  #         just { |value| value }
+  #         nothing { if_nothing }
+  #       end
+  #     end
+  #
+  #
+  # @param [Symbol] The name of the operations to define.
+  # @param [Proc] The definitions of the implementations for each case.
+  def operation(sym, &definitions)
+    define_method(sym) do |*args|
+      dsl = CaseRecorder.new
+      dsl_cls = class <<dsl; self; end
+      # This is hax so that we can 'instance_eval' the definitions block on a recorder,
+      # but in this case the definitions block could have arguments (which are arguments
+      # to the operation)
+      dsl_cls.send(:define_method, :_defs, &definitions)
+      dsl._defs(*args)
+      # Now we just turn the [(case_name, impl)] structure into an argument for fold and
+      # are done. Fold with a hash will check that all keys are defined.
+      fold(dsl._implementations.inject({}) { |memo, (c, impl)| memo[c] = impl; memo })
+    end
+  end
 end
 
