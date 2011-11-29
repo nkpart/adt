@@ -1,3 +1,9 @@
+0.0.5
+=====
+
+* NEW: Started working on data. First up - Maybe. require 'data/maybe'
+* BUG: Arguments to a case were not being shown using #inspect inside a #inspect.
+
 0.0.4
 =====
 
