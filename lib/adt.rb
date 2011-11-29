@@ -145,7 +145,7 @@ module ADT
         index = 0
         bit = case_args.map { |ca| 
           index += 1
-          " #{ca}:#\{a#{index}\}"
+          " #{ca}:#\{a#{index}\.inspect}"
         }.join('')
         eval(proc_create[case_args.count, "a", " \" #{cn}#{bit}\""])
       }) + ">"

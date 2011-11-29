@@ -52,6 +52,7 @@ describe ADT do
 
   it "#inspect" do
     Maybe.just(5).inspect.should == "#<Maybe just value:5>"
+    Maybe.just([5]).inspect.should == "#<Maybe just value:[5]>"
     Maybe.nothing.inspect.should == "#<Maybe nothing>"
   end
 
