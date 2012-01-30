@@ -29,7 +29,7 @@ module ADT
   #       end
   #     end
   # 
-  # This will provde 2 core pieces of functionality.
+  # This will provide 2 core pieces of functionality.
   # 
   # 1. Constructors, as class methods, named the same as the case, and expecting
   #    parameters as per the symbol arguments provided in the `cases` block.
@@ -79,9 +79,9 @@ module ADT
     dsl.__instance_eval(&definitions)
 
     cases = dsl._church_cases
-    num_cases = dsl._church_cases.length
-    case_names = dsl._church_cases.map { |x| x[0] }
-    is_enumeration = dsl._church_cases.all?{ |(_, args)| args.count == 0 }
+    num_cases = cases.length
+    case_names = cases.map { |x| x[0] }
+    is_enumeration = cases.all?{ |(_, args)| args.count == 0 }
 
     # creates procs with a certain arg count. body should use #{prefix}N to access arguments. The result should be
     # eval'ed at the call site
@@ -111,7 +111,7 @@ module ADT
     end
 
     # The Constructors
-    dsl._church_cases.each_with_index do |(name, case_args), index|
+    cases.each_with_index do |(name, case_args), index|
       constructor = proc { |*args| self.new(&eval(proc_create[num_cases, "a", "a#{index+1}.call(*args)"])) }
       if case_args.size > 0 then
         singleton_class.send(:define_method, name, &constructor)
@@ -125,11 +125,24 @@ module ADT
       end
     end
 
+    # Getter methods for common accessors
+    all_arg_names = cases.map { |(_, args)| args }.flatten
+    all_arg_names.each do |arg|
+      case_positions = cases.map { |(_, args)| args.index(arg) && [args.index(arg), args.count] }
+      if case_positions.all?
+        define_method(arg) do
+          fold(*case_positions.map { |(position, count)| 
+            eval(proc_create[count, "a", "a#{position+1}" ])
+          })
+        end
+      end
+    end
+
     # Case info methods
     # Indexing is 1-based
     define_method(:case_index) do fold(*(1..case_names.length).to_a.map { |i| proc { i } }) end
     define_method(:case_name) do fold(*case_names.map { |i| proc { i.to_s } }) end
-    define_method(:case_arity) do fold(*dsl._church_cases.map { |(_, args)| proc { args.count } }) end
+    define_method(:case_arity) do fold(*cases.map { |(_, args)| proc { args.count } }) end
 
     # Enumerations are defined as classes with cases that don't take arguments. A number of useful
     # functions can be defined for these.
@@ -144,7 +157,7 @@ module ADT
 
     # The usual object helpers
     define_method(:inspect) do
-      "#<" + self.class.name + fold(*dsl._church_cases.map { |(cn, case_args)|
+      "#<" + self.class.name + fold(*cases.map { |(cn, case_args)|
         index = 0
         bit = case_args.map { |ca| 
           index += 1

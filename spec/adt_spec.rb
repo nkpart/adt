@@ -81,6 +81,28 @@ describe ADT do
     end
   end
 
+  context "shared accessors" do
+    before do
+      @cls = Class.new do
+        extend ADT
+        cases { one(:v, :a); two(:q, :v) }
+      end
+      @uncommon = Class.new do
+        extend ADT
+        cases { one(:p); two(:q) }
+      end
+    end
+
+    it("provides shared accessors if every case has one") do
+      @cls.one(3, 1).v.should == 3
+      @cls.two(1, 3).v.should == 3
+    end
+
+    it("does not provide accessors if they are not common to all") do
+      @uncommon.two(3).respond_to?(:q).should be_false
+    end
+  end
+
   describe "enumerations" do
     it "creates an all cases accessor if the type is an enumeration" do
       LolStatus.all_values.should == [LolStatus.srs, LolStatus.active]
@@ -131,7 +153,7 @@ describe ADT do
         extend ADT
         cases do one(:v) end
       end
-      cls.one(5).to_a.should == [5]
+      cls.one(5).v.should == 5
     end
   end
 end
