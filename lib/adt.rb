@@ -105,7 +105,10 @@ module ADT
     end
 
     # If we're inside a named class, then set up an alias to fold
-    define_method(StringHelp.underscore(name.split('::').last)) do |*args| fold(*args) end
+    fold_synonym = StringHelp.underscore(name.split('::').last)
+    if fold_synonym && fold_synonym.length > 0 then
+      define_method(fold_synonym) do |*args| fold(*args) end
+    end
 
     # The Constructors
     dsl._church_cases.each_with_index do |(name, case_args), index|
