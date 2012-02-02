@@ -105,7 +105,7 @@ module ADT
     end
 
     # If we're inside a named class, then set up an alias to fold
-    fold_synonym = StringHelp.underscore(name.split('::').last)
+    fold_synonym = name && StringHelp.underscore(name.split('::').last)
     if fold_synonym && fold_synonym.length > 0 then
       define_method(fold_synonym) do |*args| fold(*args) end
     end
