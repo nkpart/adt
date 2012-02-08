@@ -130,19 +130,17 @@ module ADT
     all_arg_names.each do |arg|
       case_positions = cases.map { |(_, args)| args.index(arg) && [args.index(arg), args.count] }
       if case_positions.all?
-        define_method(arg) do
-          fold(*case_positions.map { |(position, count)| 
+        define_fold(arg, case_positions.map { |(position, count)| 
             eval(proc_create[count, "a", "a#{position+1}" ])
           })
-        end
       end
     end
 
     # Case info methods
     # Indexing is 1-based
-    define_method(:case_index) do fold(*(1..case_names.length).to_a.map { |i| proc { i } }) end
-    define_method(:case_name) do fold(*case_names.map { |i| proc { i.to_s } }) end
-    define_method(:case_arity) do fold(*cases.map { |(_, args)| proc { args.count } }) end
+    define_fold(:case_index, (1..case_names.length).to_a.map { |i| proc { i } })
+    define_fold(:case_name, case_names.map { |i| proc { i.to_s } }) 
+    define_fold(:case_arity, cases.map { |(_, args)| proc { args.count } })
 
     # Enumerations are defined as classes with cases that don't take arguments. A number of useful
     # functions can be defined for these.
@@ -171,11 +169,7 @@ module ADT
       !other.nil? && case_index == other.case_index && to_a == other.to_a
     end
 
-    define_method(:to_a) do 
-      fold(*cases.map { |(cn, args)|
-        eval(proc_create[args.count, "a", "[" + (1..args.count).to_a.map { |idx| "a#{idx}" }.join(',') + "]"])
-      })
-    end
+    define_fold(:to_a, cases.map { |_| proc { |*a| a } })
 
     # Comparisons are done by index, then by the values within the case (if any) via #to_a
     define_method(:<=>) do |other|
@@ -190,11 +184,7 @@ module ADT
     cases.each_with_index do |(name, args), idx|
       #     Thing.foo(5).foo? # <= true
       #     Thing.foo(5).bar? # <= false
-      define_method("#{name}?") do
-        fold(*case_names.map { |cn|
-          eval(proc_create[0, "a", cn == name ? "true" : "false"])
-        })
-      end
+      define_fold("#{name}?", case_names.map { |cn| eval(proc_create[0, "a", cn == name ? "true" : "false"]) })
       
       #     Thing.foo(5).when_foo(proc {|v| v }, proc { 0 }) # <= 5
       #     Thing.bar(5).when_foo(proc {|v| v }, proc { 0 }) # <= 0
@@ -253,6 +243,12 @@ module ADT
         memo[c] = some_impl
         memo 
       })
+    end
+  end
+
+  def define_fold(sym, procs)
+    define_method(sym) do
+      fold(*procs)
     end
   end
 end
