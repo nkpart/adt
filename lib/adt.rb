@@ -1,6 +1,6 @@
 require 'adt/case_recorder'
 
-module StringHelp
+module AdtUtils
   def self.underscore(camel_cased_word)
     word = camel_cased_word.to_s.dup
     word.gsub!(/::/, '/')
@@ -9,6 +9,10 @@ module StringHelp
     word.tr!("-", "_")
     word.downcase!
     word
+  end
+
+  def self.ivar_name(sym)
+    "@_adt_cached_" + sym.to_s.gsub("?","_que").gsub("!","_bang")
   end
 end
 
@@ -85,9 +89,9 @@ module ADT
 
     # creates procs with a certain arg count. body should use #{prefix}N to access arguments. The result should be
     # eval'ed at the call site
-    proc_create = proc { |argc, prefix, body|
+    create_lambda = lambda { |argc, prefix, body|
       args = argc > 0 ? "|#{(1..argc).to_a.map { |a| "#{prefix}#{a}" }.join(',')}|" : ""
-      "proc { #{args} #{body} }" 
+      "lambda { #{args} #{body} }" 
     }
 
     # Initializer. Should not be used directly.
@@ -105,14 +109,14 @@ module ADT
     end
 
     # If we're inside a named class, then set up an alias to fold
-    fold_synonym = name && StringHelp.underscore(name.split('::').last)
+    fold_synonym = name && AdtUtils.underscore(name.split('::').last)
     if fold_synonym && fold_synonym.length > 0 then
       define_method(fold_synonym) do |*args| fold(*args) end
     end
 
     # The Constructors
     cases.each_with_index do |(name, case_args), index|
-      constructor = proc { |*args| self.new(&eval(proc_create[num_cases, "a", "a#{index+1}.call(*args)"])) }
+      constructor = lambda { |*args| self.new(&eval(create_lambda[num_cases, "a", "a#{index+1}.call(*args)"])) }
       if case_args.size > 0 then
         singleton_class.send(:define_method, name, &constructor)
       else
@@ -131,7 +135,7 @@ module ADT
       case_positions = cases.map { |(_, args)| args.index(arg) && [args.index(arg), args.count] }
       if case_positions.all?
         define_fold(arg, case_positions.map { |(position, count)| 
-            eval(proc_create[count, "a", "a#{position+1}" ])
+            eval(create_lambda[count, "a", "a#{position+1}" ])
           })
       end
     end
@@ -161,7 +165,7 @@ module ADT
           index += 1
           " #{ca}:#\{a#{index}\.inspect}"
         }.join('')
-        eval(proc_create[case_args.count, "a", " \" #{cn}#{bit}\""])
+        eval(create_lambda[case_args.count, "a", " \" #{cn}#{bit}\""])
       }) + ">"
     end
 
@@ -169,7 +173,7 @@ module ADT
       !other.nil? && case_index == other.case_index && to_a == other.to_a
     end
 
-    define_fold(:to_a, cases.map { |_| proc { |*a| a } })
+    define_fold(:to_a, cases.map { |_| lambda { |*a| a } })
 
     # Comparisons are done by index, then by the values within the case (if any) via #to_a
     define_method(:<=>) do |other|
@@ -184,14 +188,14 @@ module ADT
     cases.each_with_index do |(name, args), idx|
       #     Thing.foo(5).foo? # <= true
       #     Thing.foo(5).bar? # <= false
-      define_fold("#{name}?", case_names.map { |cn| eval(proc_create[0, "a", cn == name ? "true" : "false"]) })
+      define_fold("#{name}?", cases.map { |(cn, args)| cn == name ? proc { true } : proc { false } })
       
       #     Thing.foo(5).when_foo(proc {|v| v }, proc { 0 }) # <= 5
       #     Thing.bar(5).when_foo(proc {|v| v }, proc { 0 }) # <= 0
       define_method("when_#{name}") do |handle, default|
         fold(*case_names.map { |cn| 
           if (cn == name)
-           proc { |*args| handle.call(*args) }
+           lambda { |*args| handle.call(*args) }
           else
            default
           end
@@ -239,16 +243,18 @@ module ADT
         # instance_exec it back on the instance.
         # TODO: use the proc builder like in the `cases` method, which will let us tie 
         # down the arity
-        some_impl = proc { |*args| the_instance.instance_exec(*args, &impl) }
+        some_impl = lambda { |*args| the_instance.instance_exec(*args, &impl) }
         memo[c] = some_impl
         memo 
       })
     end
   end
 
+  private
+
   def define_fold(sym, procs)
     define_method(sym) do
-      fold(*procs)
+      instance_variable_get(AdtUtils.ivar_name(sym)) || instance_variable_set(AdtUtils.ivar_name(sym), fold(*procs))
     end
   end
 end
