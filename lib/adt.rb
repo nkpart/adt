@@ -14,6 +14,14 @@ module AdtUtils
   def self.ivar_name(sym)
     "@_adt_cached_" + sym.to_s.gsub("?","_que").gsub("!","_bang")
   end
+
+    # creates procs with a certain arg count. body should use #{prefix}N to access arguments. The result should be
+    # eval'ed at the call site
+  def self.create_lambda(argc, prefix, body)
+    args = argc > 0 ? "|#{(1..argc).to_a.map { |a| "#{prefix}#{a}" }.join(',')}|" : ""
+    "lambda { #{args} #{body} }" 
+  end
+
 end
 
 module ADT
@@ -87,13 +95,6 @@ module ADT
     case_names = cases.map { |x| x[0] }
     is_enumeration = cases.all?{ |(_, args)| args.count == 0 }
 
-    # creates procs with a certain arg count. body should use #{prefix}N to access arguments. The result should be
-    # eval'ed at the call site
-    create_lambda = lambda { |argc, prefix, body|
-      args = argc > 0 ? "|#{(1..argc).to_a.map { |a| "#{prefix}#{a}" }.join(',')}|" : ""
-      "lambda { #{args} #{body} }" 
-    }
-
     # Initializer. Should not be used directly.
     define_method(:initialize) do |&fold|
       @fold = fold
@@ -116,7 +117,7 @@ module ADT
 
     # The Constructors
     cases.each_with_index do |(name, case_args), index|
-      constructor = lambda { |*args| self.new(&eval(create_lambda[num_cases, "a", "a#{index+1}.call(*args)"])) }
+      constructor = lambda { |*args| self.new(&eval(AdtUtils.create_lambda(num_cases, "a", "a#{index+1}.call(*args)"))) }
       if case_args.size > 0 then
         singleton_class.send(:define_method, name, &constructor)
       else
@@ -135,7 +136,7 @@ module ADT
       case_positions = cases.map { |(_, args)| args.index(arg) && [args.index(arg), args.count] }
       if case_positions.all?
         define_fold(arg, case_positions.map { |(position, count)| 
-            eval(create_lambda[count, "a", "a#{position+1}" ])
+            eval(AdtUtils.create_lambda(count, "a", "a#{position+1}"))
           })
       end
     end
@@ -165,7 +166,7 @@ module ADT
           index += 1
           " #{ca}:#\{a#{index}\.inspect}"
         }.join('')
-        eval(create_lambda[case_args.count, "a", " \" #{cn}#{bit}\""])
+        eval(AdtUtils.create_lambda(case_args.count, "a", " \" #{cn}#{bit}\""))
       }) + ">"
     end
 
