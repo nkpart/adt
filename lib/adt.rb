@@ -15,13 +15,12 @@ module AdtUtils
     "@_adt_cached_" + sym.to_s.gsub("?","_que").gsub("!","_bang")
   end
 
-    # creates procs with a certain arg count. body should use #{prefix}N to access arguments. The result should be
-    # eval'ed at the call site
+  # creates procs with a certain arg count. body should use #{prefix}N to access arguments. The result should be
+  # eval'ed at the call site
   def self.create_lambda(argc, prefix, body)
     args = argc > 0 ? "|#{(1..argc).to_a.map { |a| "#{prefix}#{a}" }.join(',')}|" : ""
     "lambda { #{args} #{body} }" 
   end
-
 end
 
 module ADT
@@ -112,7 +111,7 @@ module ADT
     # If we're inside a named class, then set up an alias to fold
     fold_synonym = name && AdtUtils.underscore(name.split('::').last)
     if fold_synonym && fold_synonym.length > 0 then
-      define_method(fold_synonym) do |*args| fold(*args) end
+      alias_method(fold_synonym, :fold)
     end
 
     # The Constructors
@@ -154,7 +153,7 @@ module ADT
         @all_values ||= case_names.map { |x| send(x) }
       end
 
-      define_method(:to_i) { case_index }
+      alias_method(:to_i, :case_index)
       singleton_class.send(:define_method, :from_i) do |idx| send(case_names[idx - 1]) end
     end
 
