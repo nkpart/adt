@@ -12,7 +12,7 @@ end
 class Meal
   extend ADT
   cases do
-    snack(:size)
+    snack :size
     main
   end
 end
@@ -27,6 +27,11 @@ describe ADT do
     it "#fold" do
       Maybe.just(5).fold(proc { 3 }, proc { |x| x + 1 }).should == 6
       Maybe.nothing.fold(proc { 3 }, proc { |x| x + 1 }).should == 3
+    end
+
+    it "#fold with a hash" do
+      Maybe.just(5).fold(:nothing => proc { 3 }, :just => proc { |x| x + 1 }).should == 6
+      Maybe.nothing.fold(:nothing => proc { 3 }, :just => proc { |x| x + 1 }).should == 3
     end
 
     it "#==" do
@@ -154,6 +159,15 @@ describe ADT do
         cases do one(:v) end
       end
       cls.one(5).v.should == 5
+    end
+  end
+
+  context "case info" do
+    it "works" do
+      Maybe.case_info.should == [
+        [:nothing, []],
+        [:just, [:value]]
+      ]
     end
   end
 end

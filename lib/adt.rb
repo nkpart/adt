@@ -10,17 +10,16 @@ module AdtUtils
     word.downcase!
     word
   end
+end
 
-  def self.ivar_name(sym)
-    "@_adt_cached_" + sym.to_s.gsub("?","_que").gsub("!","_bang")
+def ADT(&block)
+  m = Module.new
+  m.class.send(:public, :define_method)
+  (class <<m; self end).define_method(:extended) do |base|
+      base.extend(ADT)
+      base.send(:cases, &block)
   end
-
-  # creates procs with a certain arg count. body should use #{prefix}N to access arguments. The result should be
-  # eval'ed at the call site
-  def self.create_lambda(argc, prefix, body)
-    args = argc > 0 ? "|#{(1..argc).to_a.map { |a| "#{prefix}#{a}" }.join(',')}|" : ""
-    "lambda { #{args} #{body} }" 
-  end
+  m
 end
 
 module ADT
@@ -92,59 +91,64 @@ module ADT
     cases = dsl._church_cases
     num_cases = cases.length
     case_names = cases.map { |x| x[0] }
-    is_enumeration = cases.all?{ |(_, args)| args.count == 0 }
+    is_enumeration = cases.all? { |(_, args)| args.count == 0 }
 
     # Initializer. Should not be used directly.
-    define_method(:initialize) do |&fold|
-      @fold = fold
+    define_method(:initialize) do |tag, tag_index, values|
+      @tag = tag
+      @tag_index = tag_index
+      @values = values
     end
 
     # The Fold.
     define_method(:fold) do |*args|
       if args.first && args.first.is_a?(Hash) then
-        @fold.call(*case_names.map { |cn| args.first.fetch(cn) })
+        args.first[@tag].call(*@values)
       else
-        @fold.call(*args)
+        args[@tag_index].call(*@values)
       end
     end
 
     # If we're inside a named class, then set up an alias to fold
     fold_synonym = name && AdtUtils.underscore(name.split('::').last)
-    if fold_synonym && fold_synonym.length > 0 then
+    if fold_synonym && !fold_synonym.empty? then
       alias_method(fold_synonym, :fold)
     end
 
     # The Constructors
     cases.each_with_index do |(name, case_args), index|
-      constructor = lambda { |*args| self.new(&eval(AdtUtils.create_lambda(num_cases, "a", "a#{index+1}.call(*args)"))) }
+      constructor = lambda { |*args| self.new(name, index, args) }
       if case_args.size > 0 then
         singleton_class.send(:define_method, name, &constructor)
       else
         # Cache the constructed value if it is unary
         singleton_class.send(:define_method, name) do
           instance_variable_get("@#{name}") || begin
-            instance_variable_set("@#{name}", constructor.call)
+            instance_variable_set("@#{name}", self.new(name, index, []))
           end
         end
       end
     end
 
+    # Case info
+    singleton_class.send(:define_method, :case_info) { cases }
+
     # Getter methods for common accessors
     all_arg_names = cases.map { |(_, args)| args }.flatten
     all_arg_names.each do |arg|
-      case_positions = cases.map { |(_, args)| args.index(arg) && [args.index(arg), args.count] }
+      case_positions = cases.map { |(n, args)| args.index(arg) }
       if case_positions.all?
-        define_fold(arg, case_positions.map { |(position, count)| 
-            eval(AdtUtils.create_lambda(count, "a", "a#{position+1}"))
-          })
+        define_method(arg) { 
+          @values[case_positions[@tag_index]]
+        }
       end
     end
 
     # Case info methods
     # Indexing is 1-based
-    define_fold(:case_index, (1..case_names.length).to_a.map { |i| proc { i } })
-    define_fold(:case_name, case_names.map { |i| proc { i.to_s } }) 
-    define_fold(:case_arity, cases.map { |(_, args)| proc { args.count } })
+    define_method(:case_index) { @tag_index + 1 }
+    define_method(:case_name) { @tag.to_s }
+    define_method(:case_arity) { self.class.case_info[@tag_index][1].count }
 
     # Enumerations are defined as classes with cases that don't take arguments. A number of useful
     # functions can be defined for these.
@@ -155,25 +159,20 @@ module ADT
 
       alias_method(:to_i, :case_index)
       singleton_class.send(:define_method, :from_i) do |idx| send(case_names[idx - 1]) end
+      #TODO succ, pred
     end
 
     # The usual object helpers
     define_method(:inspect) do
-      "#<" + self.class.name + fold(*cases.map { |(cn, case_args)|
-        index = 0
-        bit = case_args.map { |ca| 
-          index += 1
-          " #{ca}:#\{a#{index}\.inspect}"
-        }.join('')
-        eval(AdtUtils.create_lambda(case_args.count, "a", " \" #{cn}#{bit}\""))
-      }) + ">"
+      args = self.class.case_info[@tag_index][1]
+      "#<#{self.class.name} #{@tag}#{args.zip(@values).map { |(x,y)| " #{x}:#{y.inspect}" }.join("")}>"
     end
 
     define_method(:==) do |other|
       !other.nil? && case_index == other.case_index && to_a == other.to_a
     end
 
-    define_fold(:to_a, cases.map { |_| lambda { |*a| a } })
+    define_method(:to_a) { @values }
 
     # Comparisons are done by index, then by the values within the case (if any) via #to_a
     define_method(:<=>) do |other|
@@ -188,18 +187,12 @@ module ADT
     cases.each_with_index do |(name, args), idx|
       #     Thing.foo(5).foo? # <= true
       #     Thing.foo(5).bar? # <= false
-      define_fold("#{name}?", cases.map { |(cn, args)| cn == name ? proc { true } : proc { false } })
+      define_method("#{name}?") { @tag == name }
       
       #     Thing.foo(5).when_foo(proc {|v| v }, proc { 0 }) # <= 5
       #     Thing.bar(5).when_foo(proc {|v| v }, proc { 0 }) # <= 0
       define_method("when_#{name}") do |handle, default|
-        fold(*case_names.map { |cn| 
-          if (cn == name)
-           lambda { |*args| handle.call(*args) }
-          else
-           default
-          end
-        })
+        @tag == name ? handle.call(*@values) : default.call
       end
     end
   end
@@ -247,14 +240,6 @@ module ADT
         memo[c] = some_impl
         memo 
       })
-    end
-  end
-
-  private
-
-  def define_fold(sym, procs)
-    define_method(sym) do
-      instance_variable_get(AdtUtils.ivar_name(sym)) || instance_variable_set(AdtUtils.ivar_name(sym), fold(*procs))
     end
   end
 end
