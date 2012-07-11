@@ -8,6 +8,10 @@ class Maybe
   end
 
   def map
+    fold(proc { self }, proc { |v| self.class.just(yield v) })
+  end
+
+  def bind
     fold(proc { self }, proc { |v| yield v })
   end
 

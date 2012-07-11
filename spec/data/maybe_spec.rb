@@ -3,7 +3,9 @@ require 'data/maybe'
 describe Maybe do
   let(:one) { rand }
   let(:two) { rand }
-  it("#map") { Maybe.just(5).map(&:succ).should == 6 }
+  let(:only_pos) { proc { |v| v > 0 ? Maybe.just(v) : Maybe.nothing } }
+  it("#map") { Maybe.just(5).map(&:succ).should == Maybe.just(6) }
+  it("#bind") { Maybe.just(5).bind(&only_pos).should == Maybe.just(5) }
   it("#or_else") {
     Maybe.just(one).or_else(Maybe.just(two)).should == Maybe.just(one)
     Maybe.just(one).or_else{Maybe.just(two)}.should == Maybe.just(one)
