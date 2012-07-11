@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = "adt"
-  s.version = "0.0.6"
+  s.version = "0.0.7"
   s.date = "2012-07-10"
   s.summary = "Algebraic data type DSL"
   s.description = "Define multiple constructors for a type, then match on them! Get all catamorphic."
