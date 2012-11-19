@@ -89,7 +89,6 @@ module ADT
     dsl.__instance_eval(&definitions)
 
     cases = dsl._church_cases
-    num_cases = cases.length
     case_names = cases.map { |x| x[0] }
     is_enumeration = cases.all? { |(_, args)| args.count == 0 }
 
@@ -136,7 +135,7 @@ module ADT
     # Getter methods for common accessors
     all_arg_names = cases.map { |(_, args)| args }.flatten
     all_arg_names.each do |arg|
-      case_positions = cases.map { |(n, args)| args.index(arg) }
+      case_positions = cases.map { |(_, args)| args.index(arg) }
       if case_positions.all?
         define_method(arg) { 
           @values[case_positions[@tag_index]]
@@ -158,6 +157,7 @@ module ADT
       end
 
       alias_method(:to_i, :case_index)
+      singleton_class.send(:define_method, :from_i) do |idx| send(case_names[idx - 1]) end
       singleton_class.send(:define_method, :from_i) do |idx| send(case_names[idx - 1]) end
       #TODO succ, pred
     end
@@ -184,7 +184,7 @@ module ADT
     # Case specific methods
     # eg.
     #     cases do foo(:a); bar(:b); end
-    cases.each_with_index do |(name, args), idx|
+    cases.each_with_index do |(name, _), idx|
       #     Thing.foo(5).foo? # <= true
       #     Thing.foo(5).bar? # <= false
       define_method("#{name}?") { @tag == name }
@@ -236,7 +236,7 @@ module ADT
         # instance_exec it back on the instance.
         # TODO: use the proc builder like in the `cases` method, which will let us tie 
         # down the arity
-        some_impl = lambda { |*args| the_instance.instance_exec(*args, &impl) }
+        some_impl = lambda { |*as| the_instance.instance_exec(*as, &impl) }
         memo[c] = some_impl
         memo 
       })
