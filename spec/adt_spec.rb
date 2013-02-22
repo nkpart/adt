@@ -123,6 +123,10 @@ describe ADT do
         LolStatus.from_i(idx + 1).should == cse
       }
     end
+
+    it "has from_s" do
+      LolStatus.from_s("srs").should == LolStatus.srs
+    end
   end
 
   context "comparable" do

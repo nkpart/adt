@@ -158,7 +158,13 @@ module ADT
 
       alias_method(:to_i, :case_index)
       singleton_class.send(:define_method, :from_i) do |idx| send(case_names[idx - 1]) end
-      singleton_class.send(:define_method, :from_i) do |idx| send(case_names[idx - 1]) end
+      singleton_class.send(:define_method, :from_s) do |case_name| 
+        if case_names.include?(case_name.to_sym)
+          send(case_name.to_sym)
+        else
+          raise "Unknown case #{case_name} for #{self}"
+        end
+      end
       #TODO succ, pred
     end
 
